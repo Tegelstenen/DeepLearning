@@ -5,6 +5,14 @@ BitGen = type(rng.bit_generator)
 seed = 42
 rng.bit_generator.state = BitGen(seed).state
 
+aa = np.int32(np.arange(32)).reshape((32, 1))
+bb = np.int32(np.arange(31, -1, -1)).reshape((32, 1))
+vv = np.tile(32*aa, (1, 32))
+ind_flip = vv.reshape((32*32, 1)) + np.tile(bb, (32, 1))
+inds_flip = np.vstack((ind_flip, 1024+ind_flip))
+INDS_FLIP = np.vstack((inds_flip, 2048+ind_flip))
+
+
 def init_network(network_shape):
     """
     network_shape will be a list of dimensions for each layer
@@ -27,7 +35,15 @@ def soft_max(s):
     sum_exp = np.sum(exp_s, axis=0)
     return exp_s / sum_exp
 
+def sigmoid(s):
+    exp_s = np.exp(s)
+    return exp_s / (exp_s+1)
+
 def cross_entropy(p, y):
+    p_safe = np.maximum(p, 1e-10)
+    return -np.sum(y * np.log(p_safe)) / p.shape[1]  # Average over batch
+
+def multiple_cross_entropy(p, y):
     p_safe = np.maximum(p, 1e-10)
     return -np.sum(y * np.log(p_safe)) / p.shape[1]  # Average over batch
 
@@ -43,3 +59,12 @@ def relative_error(Gn, Ga, eps=1e-4):
             print(f"Epsilon threshold: {eps}")
             return False
     return True    
+
+def flip_augment(X, p=0.5):
+    X_aug = X.copy()
+    to_be_flipped = rng.binomial(1, 0.5, X.shape[1]) == 1
+    if np.any(to_be_flipped):
+        X_to_flip = X_aug[:, to_be_flipped]
+        X_aug[:, to_be_flipped] = X_to_flip[INDS_FLIP.flatten(), :]
+    
+    return X_aug

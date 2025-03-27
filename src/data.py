@@ -50,3 +50,21 @@ def get_moments(X):
 def normalize(X, mean, std):
     return (X - mean)/std
 
+def load_all_train_data():
+    dir = "datasets/cifar-10-batches-py/"
+    X_all = None
+    Y_all = None
+    y_all = None
+    for i in range(1,6):
+        file = dir+f"data_batch_{i}"
+        X_batch, Y_batch, y_batch = load_batch(file)
+        if X_all is None:
+            X_all = X_batch
+            Y_all = Y_batch
+            y_all = y_batch
+        else:
+            X_all = np.hstack((X_all, X_batch))
+            Y_all = np.hstack((Y_all, Y_batch))
+            y_all = np.hstack((y_all, y_batch))
+    
+    return X_all, Y_all, y_all
