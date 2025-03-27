@@ -41,11 +41,13 @@ def sigmoid(s):
 
 def cross_entropy(p, y):
     p_safe = np.maximum(p, 1e-10)
-    return -np.sum(y * np.log(p_safe)) / p.shape[1]  # Average over batch
+    return -np.sum(y * np.log(p_safe)) / p.shape[1]  
 
 def multiple_cross_entropy(p, y):
+    K = p.shape[0] 
     p_safe = np.maximum(p, 1e-10)
-    return -np.sum(y * np.log(p_safe)) / p.shape[1]  # Average over batch
+    p_safe_complement = np.maximum(1 - p_safe, 1e-10)
+    return -np.sum(y * np.log(p_safe) + (1 - y) * np.log(p_safe_complement)) / (K * p.shape[1])
 
 def relative_error(Gn, Ga, eps=1e-4):
     for key in Ga:

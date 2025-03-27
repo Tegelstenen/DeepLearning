@@ -28,7 +28,7 @@ class Network:
         if self.loss_function is cross_entropy:
             G = -(Y - P)
         elif self.loss_function is multiple_cross_entropy:
-            K = P.shape[1]
+            K = P.shape[0]
             G = -(Y - P)/K
         grads['W'] = 1/n_b * np.matmul(G, X.T) + 2*lam*self.transitions[0]["W"] # ! only handles 1 dim
         grads['b'] = 1/n_b * np.sum(G, axis=1, keepdims=True)
@@ -81,10 +81,12 @@ class Network:
                 lr = initial_lr * (decay_rate ** (ep // decay_steps))
             
             if augmentation:
-                X_train = flip_augment(X_train)
-            
+                X_train_copy = flip_augment(X_train.copy())
+            else:
+                X_train_copy = X_train.copy()
+                
             indices = rng.permutation(N)
-            X_perm = X_train[:, indices]
+            X_perm = X_train_copy[:, indices]
             Y_perm = Y_train[:, indices]
             
             for j in range(int(N/n_batch)):
