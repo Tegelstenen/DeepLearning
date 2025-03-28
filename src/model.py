@@ -42,7 +42,7 @@ class Network:
         y_pred = np.argmax(P, axis=0)
         return np.count_nonzero(y_pred == y) / y_pred.shape[0]
     
-    def train(self, X_train, Y_train, X_val, Y_val, n_batch=100, lr=.001, epochs=40, lam=0, seed=42, augmentation=False, decay_rate=0.1, decay_steps=10, patience=5):
+    def train(self, X_train, Y_train, X_val, Y_val, n_batch=100, lr=.001, epochs=40, lam=0, seed=42, augmentation=False, decay_rate=0.1, decay_steps=10, patience=5, print_out=False):
         rng = np.random.default_rng()    
         BitGen = type(rng.bit_generator)
         rng.bit_generator.state = BitGen(seed).state
@@ -73,7 +73,10 @@ class Network:
         initial_lr = lr
         
         # Create progress bar with initial description
-        pbar = tqdm(range(epochs), desc=f"Training | lam={lam:.0e}, lr={lr:.4f}, batch_size={n_batch}, decay_steps={decay_steps}")
+        if print_out:
+            pbar = tqdm(range(epochs), desc=f"Training | lam={lam:.0e}, lr={lr:.4f}, batch_size={n_batch}, decay_steps={decay_steps}")
+        else:
+            pbar = range(epochs)
         
         for ep in pbar:
             # Apply step decay
@@ -108,12 +111,13 @@ class Network:
             losses["val"][ep+1] = self.loss(P_val, Y_val)
             
             # Update progress bar with all information in a single line
-            pbar.set_postfix({
-                'Epoch': f"{ep+1}/{epochs}",
-                'Train': f"{losses['train'][ep+1]:.4f}",
-                'Val': f"{losses['val'][ep+1]:.4f}",
-                'lr': f"{lr:.6f}"
-            })
+            if print_out:
+                pbar.set_postfix({
+                    'Epoch': f"{ep+1}/{epochs}",
+                    'Train': f"{losses['train'][ep+1]:.4f}",
+                    'Val': f"{losses['val'][ep+1]:.4f}",
+                    'lr': f"{lr:.6f}"
+                })
             
             # Early stopping check
             current_val_loss = losses["val"][ep+1]
@@ -128,11 +132,11 @@ class Network:
                 patience_counter += 1
             
             if patience_counter >= patience:
-                pbar.set_description(f"Early stopped at epoch {ep+1}")
+                if print_out: pbar.set_description(f"Early stopped at epoch {ep+1}| lam={lam:.0e}, lr={lr:.4f}, batch_size={n_batch}, decay_steps={decay_steps}")
                 self.transitions = best_weights
                 break
         
-        pbar.close()
+        if print_out: pbar.close()
         return losses
     
     
